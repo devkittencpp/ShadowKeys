@@ -1,0 +1,137 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ShadowKeys"
+        x:Class="ShadowKeys.MainWindow"
+        Title="ShadowKeys Password Manager"
+        Width="800" Height="600"
+        Background="#1B1324">
+  <!-- Resources: Add our custom FieldValueMaskConverter -->
+  <Window.Resources>
+    <local:FieldValueMaskConverter x:Key="FieldValueMaskConverter" />
+  </Window.Resources>
+
+  <Window.Styles>
+    <Style Selector="Button">
+      <Setter Property="Background" Value="#292038"/>
+      <Setter Property="Foreground" Value="#F3E5FF"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="Margin" Value="5"/>
+      <Setter Property="Padding" Value="10,5"/>
+      <Setter Property="BorderBrush" Value="#E6B3FF"/>
+      <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+    <Style Selector="Button:hover">
+      <Setter Property="Background" Value="#D490F5"/>
+      <Setter Property="Foreground" Value="#1B1324"/>
+    </Style>
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="#F3E5FF"/>
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="Background" Value="#292038"/>
+      <Setter Property="Foreground" Value="#EAE6FF"/>
+      <Setter Property="BorderBrush" Value="#E6B3FF"/>
+      <Setter Property="Padding" Value="5"/>
+    </Style>
+  </Window.Styles>
+
+  <Grid Margin="20">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="1.4*"/>
+      <ColumnDefinition Width="1.6*"/>
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <!-- Left Column: Records List -->
+    <StackPanel Grid.Column="0">
+      <TextBlock Text="Records List" FontSize="20" Margin="0,0,0,10"/>
+      <!-- Remove fixed height so the list expands -->
+      <ListBox x:Name="RecordsListBox" Background="#292038">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="local:Record">
+            <Expander Header="{Binding Name}" IsExpanded="False" 
+                      Background="#1B1324" Foreground="#F3E5FF"
+                      BorderBrush="#E6B3FF" BorderThickness="1" Margin="2" Padding="8">
+              <StackPanel>
+                <!-- List each field uniformly using a Grid -->
+                <ItemsControl ItemsSource="{Binding Fields}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="local:FieldEntry">
+                      <Grid Margin="0,2" ColumnDefinitions="Auto,Auto,*,Auto">
+                        <TextBlock Grid.Column="0" Text="{Binding FieldName}" FontWeight="Bold"/>
+                        <TextBlock Grid.Column="1" Text=":" Margin="4,0"/>
+                        <TextBlock Grid.Column="2" 
+                                   Text="{Binding ., Converter={StaticResource FieldValueMaskConverter}}" />
+                        <Button Grid.Column="3" Content="Copy" 
+                                Click="OnCopyField" 
+                                Tag="{Binding}" HorizontalAlignment="Right" MinWidth="60"/>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <!-- Buttons to edit or remove the entire record -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
+                  <Button Content="Edit" Click="EditRecordButton_Click" Tag="{Binding}" MinWidth="80"/>
+                  <Button Content="Remove" Click="RemoveRecordButton_Click" Tag="{Binding}" MinWidth="80"/>
+                </StackPanel>
+              </StackPanel>
+            </Expander>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </StackPanel>
+
+    <!-- Right Column: Record Details Editing -->
+    <StackPanel Grid.Column="1" Margin="20,0,0,0">
+      <TextBlock Text="Record Details" FontSize="20" Margin="0,0,0,10"/>
+      
+      <!-- Record Name Input -->
+      <TextBlock Text="Record Name" Margin="0,0,0,5"/>
+      <TextBox x:Name="RecordNameTextBox" Width="250" Watermark="Enter record name"/>
+
+      <StackPanel Orientation="Vertical" Margin="0,10,0,10">
+        <!-- Dynamic fields for the record without the copy button -->
+        <ItemsControl x:Name="FieldsItemsControl">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="local:FieldEntry">
+              <Grid Margin="0,2" ColumnDefinitions="Auto,Auto,*,Auto">
+                <TextBox Grid.Column="0" Width="100" Text="{Binding FieldName, Mode=TwoWay}" 
+                         Watermark="Field Name"/>
+                <TextBlock Grid.Column="1" Text=":" Margin="4,0" VerticalAlignment="Center"/>
+                <TextBox Grid.Column="2" Width="200" Text="{Binding FieldValue, Mode=TwoWay}" 
+                         Watermark="Field Value"/>
+                <!-- Only the remove button is shown in the editing panel. -->
+                <Button Grid.Column="3" Content="Remove" Click="OnRemoveField" 
+                        Tag="{Binding}" HorizontalAlignment="Right" MinWidth="60"/>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Button Content="Add Field" Width="100" Click="OnAddField"/>
+      </StackPanel>
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+        <Button x:Name="AddRecordButton" Content="Add Record" Click="AddRecordButton_Click" MinWidth="130"/>
+        <Button x:Name="SaveRecordButton" Content="Save" Click="SaveRecordButton_Click" MinWidth="130"/>
+      </StackPanel>
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+        <Button Content="Import" Click="OnImport" MinWidth="100"/>
+        <Button Content="Export" Click="OnExport" MinWidth="100"/>
+      </StackPanel>
+    </StackPanel>
+
+    <!-- Footer: Notification and Instruction -->
+    <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" 
+                Orientation="Vertical" HorizontalAlignment="Center" 
+                Margin="0,20,0,0">
+      <TextBlock x:Name="NotificationTextBlock" HorizontalAlignment="Center"/>
+      <TextBlock Text="Use the copy buttons in the list to copy individual field values."
+                 HorizontalAlignment="Center" Margin="0,10,0,0" Foreground="#CCCCCC"/>
+    </StackPanel>
+  </Grid>
+</Window>
