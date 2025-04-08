@@ -2,10 +2,13 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.Data.Converters;
+using Avalonia.VisualTree; // For GetVisualDescendants()
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;  // For CancelEventArgs
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -40,7 +43,7 @@ namespace ShadowKeys
         {
             if (value is FieldEntry field)
             {
-                if (!string.IsNullOrEmpty(field.FieldName) && 
+                if (!string.IsNullOrEmpty(field.FieldName) &&
                     field.FieldName.Equals("password", StringComparison.InvariantCultureIgnoreCase))
                 {
                     return "********";
@@ -58,6 +61,8 @@ namespace ShadowKeys
 
     public partial class MainWindow : Window
     {
+        private const string RecordsFilePath = "records.enc";
+
         private ObservableCollection<Record> _records;
         private ObservableCollection<FieldEntry> _currentFields;
         private Record _editingRecord; // Holds the record currently being edited
@@ -66,11 +71,56 @@ namespace ShadowKeys
         {
             InitializeComponent();
 
-            // Initialize collections and bind to controls.
-            _records = new ObservableCollection<Record>();
+            // Load persisted records if available.
+            _records = LoadRecords();
             RecordsListBox.ItemsSource = _records;
+
             _currentFields = new ObservableCollection<FieldEntry>();
             FieldsItemsControl.ItemsSource = _currentFields;
+
+            // Save records when window is closing.
+            this.Closing += OnWindowClosing;
+        }
+
+        private ObservableCollection<Record> LoadRecords()
+        {
+            if (File.Exists(RecordsFilePath))
+            {
+                try
+                {
+                    string encryptedData = File.ReadAllText(RecordsFilePath);
+                    string json = EncryptionHelper.DecryptString(encryptedData);
+                    var importedRecords = JsonSerializer.Deserialize<ObservableCollection<Record>>(json);
+                    if (importedRecords != null)
+                    {
+                        return importedRecords;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Notify("Failed to load records: " + ex.Message, true);
+                }
+            }
+            return new ObservableCollection<Record>();
+        }
+
+        private void OnWindowClosing(object sender, CancelEventArgs e)
+        {
+            SaveRecords();
+        }
+
+        private void SaveRecords()
+        {
+            try
+            {
+                string json = JsonSerializer.Serialize(_records);
+                string encryptedData = EncryptionHelper.EncryptString(json);
+                File.WriteAllText(RecordsFilePath, encryptedData);
+            }
+            catch (Exception ex)
+            {
+                Notify("Failed to save records: " + ex.Message, true);
+            }
         }
 
         // Add a new field row in the editing panel.
@@ -290,6 +340,28 @@ namespace ShadowKeys
                 timer.Stop();
             };
             timer.Start();
+        }
+
+        // Event handler to ensure that when one Expander is opened, all others collapse.
+        private void Expander_Expanded(object? sender, RoutedEventArgs e)
+        {
+            if (sender is Expander expandedExpander)
+            {
+                // Loop through all items by their index.
+                for (int i = 0; i < RecordsListBox.Items.Count; i++)
+                {
+                    var container = RecordsListBox.ItemContainerGenerator.ContainerFromIndex(i) as ListBoxItem;
+                    if (container != null)
+                    {
+                        // Locate the Expander in this container using the visual tree.
+                        var expander = container.GetVisualDescendants().OfType<Expander>().FirstOrDefault();
+                        if (expander != null && expander != expandedExpander)
+                        {
+                            expander.IsExpanded = false;
+                        }
+                    }
+                }
+            }
         }
     }
 }

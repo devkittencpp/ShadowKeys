@@ -35,77 +35,82 @@
     </Style>
   </Window.Styles>
 
+  <!-- Main Grid: Two columns and two rows -->
   <Grid Margin="20">
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="1.4*"/>
       <ColumnDefinition Width="1.6*"/>
     </Grid.ColumnDefinitions>
     <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
 
-    <!-- Left Column: Records List -->
-    <StackPanel Grid.Column="0">
-      <TextBlock Text="Records List" FontSize="20" Margin="0,0,0,10"/>
-      <!-- Remove fixed height so the list expands -->
-      <ListBox x:Name="RecordsListBox" Background="#292038">
+    <!-- Left Column: Records List (in row 0) -->
+    <Grid Grid.Column="0" Grid.Row="0">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+      </Grid.RowDefinitions>
+      <TextBlock Grid.Row="0" Text="Records List" FontSize="20" Margin="0,0,0,10"/>
+      <ListBox Grid.Row="1" x:Name="RecordsListBox" Background="#292038"
+               ScrollViewer.VerticalScrollBarVisibility="Auto">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="local:Record">
-            <Expander Header="{Binding Name}" IsExpanded="False" 
-                      Background="#1B1324" Foreground="#F3E5FF"
-                      BorderBrush="#E6B3FF" BorderThickness="1" Margin="2" Padding="8">
-              <StackPanel>
-                <!-- List each field uniformly using a Grid -->
-                <ItemsControl ItemsSource="{Binding Fields}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="local:FieldEntry">
-                      <Grid Margin="0,2" ColumnDefinitions="Auto,Auto,*,Auto">
-                        <TextBlock Grid.Column="0" Text="{Binding FieldName}" FontWeight="Bold"/>
-                        <TextBlock Grid.Column="1" Text=":" Margin="4,0"/>
-                        <TextBlock Grid.Column="2" 
-                                   Text="{Binding ., Converter={StaticResource FieldValueMaskConverter}}" />
-                        <Button Grid.Column="3" Content="Copy" 
-                                Click="OnCopyField" 
-                                Tag="{Binding}" HorizontalAlignment="Right" MinWidth="60"/>
-                      </Grid>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <!-- Buttons to edit or remove the entire record -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
-                  <Button Content="Edit" Click="EditRecordButton_Click" Tag="{Binding}" MinWidth="80"/>
-                  <Button Content="Remove" Click="RemoveRecordButton_Click" Tag="{Binding}" MinWidth="80"/>
+            <Grid HorizontalAlignment="Stretch">
+              <!-- Attach the Expanded event; fixed width provided -->
+              <Expander Header="{Binding Name}" IsExpanded="False"
+                        Background="#1B1324" Foreground="#F3E5FF"
+                        BorderBrush="#E6B3FF" BorderThickness="1" Margin="2" Padding="8"
+                        Width="300"
+                        Expanded="Expander_Expanded">
+                <StackPanel>
+                  <ItemsControl ItemsSource="{Binding Fields}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="local:FieldEntry">
+                        <Grid Margin="0,2" ColumnDefinitions="Auto,Auto,*,Auto">
+                          <TextBlock Grid.Column="0" Text="{Binding FieldName}" FontWeight="Bold"/>
+                          <TextBlock Grid.Column="1" Text=":" Margin="4,0"/>
+                          <TextBlock Grid.Column="2"
+                                     Text="{Binding ., Converter={StaticResource FieldValueMaskConverter}}" />
+                          <Button Grid.Column="3" Content="Copy"
+                                  Click="OnCopyField"
+                                  Tag="{Binding}" HorizontalAlignment="Right" MinWidth="60"/>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
+                    <Button Content="Edit" Click="EditRecordButton_Click" Tag="{Binding}" MinWidth="80"/>
+                    <Button Content="Remove" Click="RemoveRecordButton_Click" Tag="{Binding}" MinWidth="80"/>
+                  </StackPanel>
                 </StackPanel>
-              </StackPanel>
-            </Expander>
+              </Expander>
+            </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
-    </StackPanel>
+    </Grid>
 
-    <!-- Right Column: Record Details Editing -->
-    <StackPanel Grid.Column="1" Margin="20,0,0,0">
+    <!-- Right Column: Record Details Editing (in row 0) -->
+    <StackPanel Grid.Column="1" Grid.Row="0" Margin="20,0,0,0">
       <TextBlock Text="Record Details" FontSize="20" Margin="0,0,0,10"/>
-      
+
       <!-- Record Name Input -->
       <TextBlock Text="Record Name" Margin="0,0,0,5"/>
       <TextBox x:Name="RecordNameTextBox" Width="250" Watermark="Enter record name"/>
 
       <StackPanel Orientation="Vertical" Margin="0,10,0,10">
-        <!-- Dynamic fields for the record without the copy button -->
         <ItemsControl x:Name="FieldsItemsControl">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="local:FieldEntry">
               <Grid Margin="0,2" ColumnDefinitions="Auto,Auto,*,Auto">
-                <TextBox Grid.Column="0" Width="100" Text="{Binding FieldName, Mode=TwoWay}" 
+                <TextBox Grid.Column="0" Width="100" Text="{Binding FieldName, Mode=TwoWay}"
                          Watermark="Field Name"/>
                 <TextBlock Grid.Column="1" Text=":" Margin="4,0" VerticalAlignment="Center"/>
-                <TextBox Grid.Column="2" Width="200" Text="{Binding FieldValue, Mode=TwoWay}" 
+                <TextBox Grid.Column="2" Width="200" Text="{Binding FieldValue, Mode=TwoWay}"
                          Watermark="Field Value"/>
-                <!-- Only the remove button is shown in the editing panel. -->
-                <Button Grid.Column="3" Content="Remove" Click="OnRemoveField" 
+                <Button Grid.Column="3" Content="Remove" Click="OnRemoveField"
                         Tag="{Binding}" HorizontalAlignment="Right" MinWidth="60"/>
               </Grid>
             </DataTemplate>
@@ -118,20 +123,18 @@
         <Button x:Name="AddRecordButton" Content="Add Record" Click="AddRecordButton_Click" MinWidth="130"/>
         <Button x:Name="SaveRecordButton" Content="Save" Click="SaveRecordButton_Click" MinWidth="130"/>
       </StackPanel>
-
-      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
-        <Button Content="Import" Click="OnImport" MinWidth="100"/>
-        <Button Content="Export" Click="OnExport" MinWidth="100"/>
-      </StackPanel>
+      <!-- (Import and Export buttons have been moved to the bottom row) -->
     </StackPanel>
 
-    <!-- Footer: Notification and Instruction -->
-    <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" 
-                Orientation="Vertical" HorizontalAlignment="Center" 
-                Margin="0,20,0,0">
-      <TextBlock x:Name="NotificationTextBlock" HorizontalAlignment="Center"/>
-      <TextBlock Text="Use the copy buttons in the list to copy individual field values."
-                 HorizontalAlignment="Center" Margin="0,10,0,0" Foreground="#CCCCCC"/>
+    <!-- Bottom Row, Left Cell: Notification -->
+    <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left">
+      <TextBlock x:Name="NotificationTextBlock" VerticalAlignment="Center"/>
+    </StackPanel>
+
+    <!-- Bottom Row, Right Cell: Import / Export Buttons (aligned bottom-right) -->
+    <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+      <Button Content="Import" Click="OnImport" MinWidth="100"/>
+      <Button Content="Export" Click="OnExport" MinWidth="100"/>
     </StackPanel>
   </Grid>
 </Window>
